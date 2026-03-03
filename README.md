@@ -72,7 +72,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and how to add supp
 
 ## Support
 
-If TokenBBQ saves you from bill shock, consider buying me a coffee:
+Buy me a Token:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M4M11VBHXH)
 
