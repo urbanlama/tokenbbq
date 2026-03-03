@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/tokenbbq.svg)](https://www.npmjs.com/package/tokenbbq)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**See what your AI coding tools actually cost you.** TokenBBQ reads local usage data from Claude Code, Codex, OpenCode, Amp, and Pi-Agent and shows it all in one dashboard.
+**See what your AI coding tools actually cost you.** TokenBBQ reads local usage data from Claude Code, Codex, Gemini, OpenCode, Amp, and Pi-Agent and shows it all in one dashboard.
 
 ## Quick Start
 
@@ -32,11 +32,12 @@ No install, no config, no API keys. Opens a dashboard in your browser at `localh
 |------|--------------|--------|
 | **Claude Code** | `~/.claude/projects/**/*.jsonl` | JSONL |
 | **Codex** | `~/.codex/sessions/**/*.jsonl` | JSONL |
+| **Gemini** | `~/.gemini/tmp/**/chats/session-*.json` | JSON |
 | **OpenCode** | `~/.local/share/opencode/` | JSON + SQLite |
 | **Amp** | `~/.local/share/amp/threads/**/*.json` | JSON |
 | **Pi-Agent** | `~/.pi/agent/sessions/**/*.jsonl` | JSONL |
 
-On Windows, `~` resolves to `C:\Users\<name>`. Claude Code and Codex use the same paths cross-platform. OpenCode, Amp, and Pi-Agent default to Linux/macOS paths — set `OPENCODE_DATA_DIR`, `AMP_DATA_DIR`, or `PI_AGENT_DIR` environment variables to override.
+On Windows, `~` resolves to `C:\Users\<name>`. Claude Code, Codex, and Gemini use the same paths cross-platform. OpenCode, Amp, and Pi-Agent default to Linux/macOS paths — set `GEMINI_DIR`, `OPENCODE_DATA_DIR`, `AMP_DATA_DIR`, or `PI_AGENT_DIR` environment variables to override.
 
 ## CLI
 
