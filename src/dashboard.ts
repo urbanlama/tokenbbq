@@ -788,10 +788,10 @@ function renderSourceChart(data) {
   if (sourceChartInstance) sourceChartInstance.destroy();
   
   const labels = data.bySource.map(s => SOURCE_LABELS[s.source] || s.source);
-  const values = data.bySource.map(s => s.costUSD);
+  const values = data.bySource.map(s => sumTokens(s.tokens));
   const colors = data.bySource.map(s => SOURCE_COLORS[s.source] || '#666');
   const total = values.reduce((a, b) => a + b, 0);
-  
+
   sourceChartInstance = new Chart(document.getElementById('sourceChart'), {
     type: 'doughnut',
     data: {
@@ -807,7 +807,7 @@ function renderSourceChart(data) {
           callbacks: {
             label: ctx => {
               const pct = total > 0 ? (ctx.parsed / total) * 100 : 0;
-              return ctx.label + ': ' + fmtUSD(ctx.parsed) + ' (' + pct.toFixed(1) + '%)';
+              return ctx.label + ': ' + fmtTokens(ctx.parsed) + ' (' + pct.toFixed(1) + '%)';
             }
           }
         }
