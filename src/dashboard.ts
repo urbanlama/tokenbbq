@@ -359,6 +359,7 @@ let dailyChartInstance = null;
 let sourceChartInstance = null;
 let modelChartInstance = null;
 let monthlyChartInstance = null;
+let popupHeroChart = null;
 let currentSort = { key: 'date', dir: 'desc' };
 let currentTimeFilter = '90';
 let selectedTableSources = new Set();
@@ -1173,10 +1174,11 @@ function pTable(headers, rows) {
 }
 
 function showPopup(title, contentHtml, sourceEl = null) {
+  destroyPopupHeroChart();
   document.getElementById('popupTitle').textContent = title;
   document.getElementById('popupContent').innerHTML = contentHtml;
   document.getElementById('popupContent').scrollTop = 0;
-  
+
   const box = document.getElementById('popupBox');
   if (sourceEl) {
     const r = sourceEl.getBoundingClientRect();
@@ -1190,12 +1192,79 @@ function showPopup(title, contentHtml, sourceEl = null) {
     box.style.setProperty('--tx-y', '20px');
     box.style.setProperty('--tx-s', '0.9');
   }
-  
+
   const overlay = document.getElementById('popupOverlay');
   overlay.classList.add('popup-open');
+
+  // Render popup hero chart if the builder staged data in window.__popupHeroData
+  requestAnimationFrame(() => {
+    const stage = window.__popupHeroData;
+    if (!stage) return;
+    if (stage.kind === 'daily') renderPopupDailyHero(stage);
+    else if (stage.kind === 'monthly') renderPopupMonthlyHero(stage);
+    window.__popupHeroData = null;
+  });
 }
+
+function destroyPopupHeroChart() {
+  if (popupHeroChart) {
+    popupHeroChart.destroy();
+    popupHeroChart = null;
+  }
+}
+
+function renderPopupDailyHero(stage) {
+  const canvas = document.getElementById('popupDailyChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, BRAND_COLORS.primarySoft);
+  gradient.addColorStop(1, BRAND_COLORS.primaryGhost);
+  popupHeroChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: stage.labels,
+      datasets: [{
+        label: 'Tokens',
+        data: stage.values,
+        borderColor: BRAND_COLORS.primary,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: BRAND_COLORS.primary,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => items[0].label,
+            label: ctx => fmtTokens(ctx.parsed.y) + ' tokens'
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 8, color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { callback: v => fmtTokens(Number(v)), color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+// Monthly hero implemented in Task 10.
+function renderPopupMonthlyHero(stage) { /* filled in Task 10 */ }
+
 function closePopup() {
   document.getElementById('popupOverlay').classList.remove('popup-open');
+  destroyPopupHeroChart();
 }
 document.getElementById('popupOverlay').addEventListener('click', closePopup);
 document.getElementById('popupBox').addEventListener('click', e => e.stopPropagation());
