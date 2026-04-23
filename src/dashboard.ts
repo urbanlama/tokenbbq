@@ -1259,8 +1259,51 @@ function renderPopupDailyHero(stage) {
   });
 }
 
-// Monthly hero implemented in Task 10.
-function renderPopupMonthlyHero(stage) { /* filled in Task 10 */ }
+function renderPopupMonthlyHero(stage) {
+  const canvas = document.getElementById('popupMonthlyChart');
+  if (!canvas) return;
+  popupHeroChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: stage.labels,
+      datasets: [{
+        label: 'Tokens',
+        data: stage.tokens,
+        backgroundColor: BRAND_COLORS.primary,
+        hoverBackgroundColor: '#F09147',
+        borderRadius: 6,
+        borderSkipped: false,
+        barPercentage: 0.72,
+        categoryPercentage: 0.9,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => items[0].label,
+            label: ctx => {
+              const i = ctx.dataIndex;
+              const tokLabel = fmtTokens(stage.tokens[i]) + ' tokens';
+              const costLabel = fmtUSD(stage.costs[i]);
+              const g = stage.changes[i];
+              const gLabel = g == null ? '' : ' · ' + (g >= 0 ? '↑' : '↓') + ' ' + Math.abs(g).toFixed(1) + '%';
+              return tokLabel + ' · ' + costLabel + gLabel;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
+        y: { ticks: { callback: v => fmtTokens(Number(v)), color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
 
 function closePopup() {
   document.getElementById('popupOverlay').classList.remove('popup-open');
@@ -1617,44 +1660,60 @@ function buildModelChartPopup(data) {
 function buildMonthlyChartPopup(data) {
   const months = data.monthly;
   if (!months.length) return '<div style="color:#6b7280;padding:16px 0">No data in range</div>';
-  
-  let html = '';
-  if (months.length > 2) {
-    html += '<div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:12px;margin:12px 0">'
-      + '<div style="font-size:12px;color:#9ca3af;margin-bottom:8px">Monthly spend trajectory</div>'
-      + pSparkline(months.map(m => m.costUSD), '#f87171', 60)
-      + '</div>';
-  }
 
-  const sortedByCost = [...months].sort((a, b) => b.costUSD - a.costUSD);
-  const avgMonthly = months.reduce((s, m) => s + m.costUSD, 0) / months.length;
+  const monthsTok = months.map(m => sumTokens(m.tokens));
+  const monthsCost = months.map(m => m.costUSD);
+
+  // Compute month-over-month change using tokens
+  const changes = monthsTok.map((t, i) => {
+    if (i === 0) return null;
+    const prev = monthsTok[i - 1];
+    if (prev <= 0) return null;
+    return (t - prev) / prev * 100;
+  });
+
+  let html = '';
+
+  // Hero: thick vertical bars (rendered after insertion — see renderPopupMonthlyHero)
+  html += '<div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:12px;margin:12px 0 16px">'
+    + '<div style="font-size:12px;color:#9ca3af;margin-bottom:8px">Monthly token volume</div>'
+    + '<canvas id="popupMonthlyChart" height="240" style="max-height:240px"></canvas>'
+    + '</div>';
+
+  const sortedByTok = [...months].map((m, i) => ({ m, t: monthsTok[i] })).sort((a, b) => b.t - a.t);
+  const avgMonthlyTok = monthsTok.reduce((s, t) => s + t, 0) / months.length;
 
   html += '<div class="p-stat-grid cols-2">'
-    + pStatCard('Avg Monthly Cost', fmtUSD(avgMonthly), '#60a5fa')
-    + pStatCard('Peak Month', fmtUSD(sortedByCost[0].costUSD), '#f87171', sortedByCost[0].month)
+    + pStatCard('Avg Monthly Tokens', fmtTokens(Math.round(avgMonthlyTok)), BRAND_COLORS.primary)
+    + pStatCard('Peak Month', fmtTokens(sortedByTok[0].t), SOURCE_COLORS['claude-code'], sortedByTok[0].m.month)
     + '</div>';
 
   html += pSection('Month-over-month Analysis');
-  
-  // Custom bar chart with +/- indicators
-  const maxMonthCost = sortedByCost[0].costUSD || 1;
+
+  const maxMonthTok = Math.max(...monthsTok, 1);
   months.forEach((m, i) => {
-    const prev = months[i - 1];
+    const tok = monthsTok[i];
+    const g = changes[i];
     let changeLabel = '';
-    if (prev && prev.costUSD > 0) {
-      const g = (m.costUSD - prev.costUSD) / prev.costUSD * 100;
-      const col = g >= 0 ? '#f87171' : '#4ade80';
-      changeLabel = '<span style="color:' + col + ';font-size:11px;margin-left:8px">' + (g >= 0 ? '↑ ' : '↓ ') + Math.abs(g).toFixed(1) + '%</span>';
+    if (g != null) {
+      const up = g >= 0;
+      const col = up ? BRAND_COLORS.trendUp : BRAND_COLORS.trendDown;
+      changeLabel = '<span style="color:' + col + ';font-size:11px;margin-left:8px">' + (up ? '↑ ' : '↓ ') + Math.abs(g).toFixed(1) + '%</span>';
     }
-    
+
     html += '<div style="margin-bottom:10px">'
       + '<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px">'
       + '<div><span style="color:#d1d5db">' + m.month + '</span>' + changeLabel + '</div>'
-      + '<strong style="color:#fff">' + fmtUSD(m.costUSD) + '</strong>'
+      + '<strong style="color:#fff">' + fmtTokens(tok) + '</strong>'
       + '</div>'
-      + '<div class="p-bar-track" style="height:5px"><div class="p-bar-fill" style="width:'+(m.costUSD/maxMonthCost*100)+'%;background:#a855f7"></div></div>'
+      + '<div class="p-bar-track" style="height:5px"><div class="p-bar-fill" style="width:' + (tok / maxMonthTok * 100) + '%;background:' + BRAND_COLORS.primary + '"></div></div>'
       + '</div>';
   });
+
+  // Stage hero data for showPopup to pick up
+  html += '<script data-popup-hero="monthly">'
+    + 'window.__popupHeroData = { kind: "monthly", labels: ' + JSON.stringify(months.map(m => m.month)) + ', tokens: ' + JSON.stringify(monthsTok) + ', costs: ' + JSON.stringify(monthsCost) + ', changes: ' + JSON.stringify(changes) + ' };'
+    + '<\\/script>';
 
   return html;
 }
