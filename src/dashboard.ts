@@ -1601,10 +1601,8 @@ function buildDailyChartPopup(data) {
     html += pBarRow(d.name, fmtTokens(Math.round(d.avgTokens)), d.avgTokens / maxDow, BRAND_COLORS.primary);
   });
 
-  // Stage hero data for showPopup to pick up
-  html += '<script data-popup-hero="daily">'
-    + 'window.__popupHeroData = { kind: "daily", values: ' + JSON.stringify(sorted.map(d => sumTokens(d.tokens))) + ', labels: ' + JSON.stringify(sorted.map(d => d.date)) + ' };'
-    + '<\\/script>';
+  // Stage hero data for showPopup to pick up (side-effect — script tags in innerHTML don't execute)
+  window.__popupHeroData = { kind: 'daily', values: sorted.map(d => sumTokens(d.tokens)), labels: sorted.map(d => d.date) };
 
   return html;
 }
@@ -1710,10 +1708,8 @@ function buildMonthlyChartPopup(data) {
       + '</div>';
   });
 
-  // Stage hero data for showPopup to pick up
-  html += '<script data-popup-hero="monthly">'
-    + 'window.__popupHeroData = { kind: "monthly", labels: ' + JSON.stringify(months.map(m => m.month)) + ', tokens: ' + JSON.stringify(monthsTok) + ', costs: ' + JSON.stringify(monthsCost) + ', changes: ' + JSON.stringify(changes) + ' };'
-    + '<\\/script>';
+  // Stage hero data for showPopup to pick up (side-effect — script tags in innerHTML don't execute)
+  window.__popupHeroData = { kind: 'monthly', labels: months.map(m => m.month), tokens: monthsTok, costs: monthsCost, changes: changes };
 
   return html;
 }
