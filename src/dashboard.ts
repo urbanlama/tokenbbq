@@ -271,7 +271,7 @@ tailwind.config = {
       <canvas id="dailyChart" height="100"></canvas>
     </div>
     <div id="chart-source" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
-      <h2 class="text-lg font-semibold text-white dark:text-white light:text-gray-900 mb-4">Cost by Provider</h2>
+      <h2 class="text-lg font-semibold text-white dark:text-white light:text-gray-900 mb-4">Tokens by Provider</h2>
       <canvas id="sourceChart" height="200"></canvas>
     </div>
   </div>
@@ -279,7 +279,7 @@ tailwind.config = {
   <!-- Charts Row 2 -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
     <div id="chart-model" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
-      <h2 class="text-lg font-semibold text-white dark:text-white light:text-gray-900 mb-4">Top Models by Cost</h2>
+      <h2 class="text-lg font-semibold text-white dark:text-white light:text-gray-900 mb-4">Top Models by Tokens</h2>
       <canvas id="modelChart" height="160"></canvas>
     </div>
     <div id="chart-monthly" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
