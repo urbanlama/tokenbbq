@@ -839,7 +839,7 @@ function getModelChartRows(data) {
 
   return selected
     .slice(0, maxRows)
-    .sort((a, b) => b.costUSD - a.costUSD || a.model.localeCompare(b.model));
+    .sort((a, b) => sumTokens(b.tokens) - sumTokens(a.tokens) || a.model.localeCompare(b.model));
 }
 
 function renderModelChart(data) {
@@ -851,7 +851,7 @@ function renderModelChart(data) {
     data: {
       labels: top.map(m => shortModel(m.model) + ' · ' + (SOURCE_LABELS[m.source] || m.source)),
       datasets: [{
-        data: top.map(m => m.costUSD),
+        data: top.map(m => sumTokens(m.tokens)),
         backgroundColor: top.map(m => SOURCE_COLORS[m.source] || '#6366F1'),
         borderRadius: 4,
       }]
@@ -859,8 +859,8 @@ function renderModelChart(data) {
     options: {
       indexAxis: 'y',
       responsive: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtUSD(ctx.parsed.x) } } },
-      scales: { x: { ticks: { callback: v => fmtUSD(Number(v)) } } }
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtTokens(ctx.parsed.x) } } },
+      scales: { x: { ticks: { callback: v => fmtTokens(Number(v)) } } }
     }
   });
 }
