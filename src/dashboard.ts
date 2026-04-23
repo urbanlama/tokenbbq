@@ -242,21 +242,21 @@ tailwind.config = {
 
   <!-- Summary Cards -->
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-    <div id="card-total-cost" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
-      <div class="text-gray-400 text-sm mb-1">Total Cost</div>
-      <div class="text-2xl font-bold text-orange-400" id="totalCost"></div>
-    </div>
     <div id="card-total-tokens" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
       <div class="text-gray-400 text-sm mb-1">Total Tokens</div>
       <div class="text-2xl font-bold text-blue-400" id="totalTokens"></div>
     </div>
-    <div id="card-active-days" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
-      <div class="text-gray-400 text-sm mb-1">Active Days</div>
-      <div class="text-2xl font-bold text-green-400" id="activeDays"></div>
+    <div id="card-total-cost" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
+      <div class="text-gray-400 text-sm mb-1">Total Cost</div>
+      <div class="text-2xl font-bold text-orange-400" id="totalCost"></div>
     </div>
     <div id="card-cost-per-day" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
       <div class="text-gray-400 text-sm mb-1">Cost / Day</div>
       <div class="text-2xl font-bold text-yellow-400" id="costPerDay"></div>
+    </div>
+    <div id="card-active-days" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
+      <div class="text-gray-400 text-sm mb-1">Active Days</div>
+      <div class="text-2xl font-bold text-green-400" id="activeDays"></div>
     </div>
     <div id="card-top-model" class="clickable-card bg-card dark:bg-card light:bg-light-card border border-border dark:border-border light:border-light-border rounded-xl p-5">
       <div class="text-gray-400 text-sm mb-1">Top Model</div>
@@ -696,7 +696,7 @@ function toggleExpandedDate(date) {
 
 function updateDashboard(data) {
   document.getElementById('totalCost').textContent = fmtUSD(data.totals.costUSD);
-  document.getElementById('totalTokens').textContent = fmt(data.totals.totalTokens);
+  document.getElementById('totalTokens').textContent = fmtTokens(data.totals.totalTokens);
   document.getElementById('activeDays').textContent = data.totals.activeDays;
   const topModelEl = document.getElementById('topModel');
   const topModelEntry = data.bySourceModel && data.bySourceModel.length > 0 ? data.bySourceModel[0] : null;
