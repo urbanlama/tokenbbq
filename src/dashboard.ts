@@ -873,20 +873,20 @@ function renderMonthlyChart(data) {
     data: {
       labels: data.monthly.map(m => m.month),
       datasets: [{
-        label: 'Cost (USD)',
-        data: data.monthly.map(m => m.costUSD),
-        borderColor: '#E87B35',
-        backgroundColor: '#E87B3522',
+        label: 'Tokens',
+        data: data.monthly.map(m => sumTokens(m.tokens)),
+        borderColor: BRAND_COLORS.primary,
+        backgroundColor: BRAND_COLORS.primarySoft,
         fill: true,
         tension: 0.3,
         pointRadius: 4,
-        pointBackgroundColor: '#E87B35',
+        pointBackgroundColor: BRAND_COLORS.primary,
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtUSD(ctx.parsed.y) } } },
-      scales: { y: { ticks: { callback: v => fmtUSD(Number(v)) } } }
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtTokens(ctx.parsed.y) } } },
+      scales: { y: { ticks: { callback: v => fmtTokens(Number(v)) } } }
     }
   });
 }
