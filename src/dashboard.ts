@@ -1529,31 +1529,33 @@ function buildCostPerDayPopup(data) {
 }
 
 function buildTopModelPopup(data) {
-  const models = data.byModel;
-  const totalCost = Math.max(data.totals.costUSD, 0.000001);
+  const modelsWithTok = data.byModel.map(m => ({
+    m,
+    tok: m.tokens.input + m.tokens.output + m.tokens.cacheRead + m.tokens.cacheCreation + (m.tokens.reasoning || 0)
+  }));
+  modelsWithTok.sort((a, b) => b.tok - a.tok);
+  const totalTok = Math.max(modelsWithTok.reduce((s, r) => s + r.tok, 0), 1);
   let html = '';
-  
+
   html += '<div class="p-stat-grid cols-2">'
-    + pStatCard('Unique Models', models.length, '#e87b35')
-    + pStatCard('Top Model Spend', models.length ? fmtUSD(models[0].costUSD) : '$0', '#6366f1', models.length ? pctStr(models[0].costUSD, totalCost) + ' of total' : '')
+    + pStatCard('Unique Models', modelsWithTok.length, BRAND_COLORS.primary)
+    + pStatCard('Top Model Tokens', modelsWithTok.length ? fmtTokens(modelsWithTok[0].tok) : '0', SOURCE_COLORS['claude-code'], modelsWithTok.length ? pctStr(modelsWithTok[0].tok, totalTok) + ' of total' : '')
     + '</div>';
 
-  html += pSection('All models ranked by cost');
+  html += pSection('All models ranked by tokens');
   html += '<div style="margin-top:12px">';
-  const maxModelCost = models.length ? models[0].costUSD : 1;
-  
-  models.forEach(m => {
-    const mTok = m.tokens.input + m.tokens.output + m.tokens.cacheRead + m.tokens.cacheCreation + (m.tokens.reasoning || 0);
-    const col = SOURCE_COLORS[m.sources[0]] || '#a855f7';
+  const maxModelTok = modelsWithTok.length ? modelsWithTok[0].tok : 1;
+
+  modelsWithTok.forEach(({ m, tok }) => {
+    const col = SOURCE_COLORS[m.sources[0]] || BRAND_COLORS.primary;
     html += '<div style="margin-bottom:12px">'
       + '<div style="display:flex;justify-content:space-between;margin-bottom:4px">'
       + '<span style="font-family:monospace;font-size:12px;color:#e5e7eb">' + escHtml(shortModel(m.model)) + '</span>'
-      + '<span style="font-size:12px;font-weight:600;color:'+col+'">' + fmtUSD(m.costUSD) + ' <span style="font-weight:400;color:#6b7280;font-size:11px;margin-left:6px">(' + pctStr(m.costUSD, totalCost) + ')</span></span>'
+      + '<span style="font-size:12px;font-weight:600;color:'+col+'">' + fmtTokens(tok) + ' <span style="font-weight:400;color:#6b7280;font-size:11px;margin-left:6px">(' + pctStr(tok, totalTok) + ')</span></span>'
       + '</div>'
-      + '<div class="p-bar-track" style="height:4px;margin-bottom:4px"><div class="p-bar-fill" style="width:'+(m.costUSD/maxModelCost*100)+'%;background:'+col+'"></div></div>'
+      + '<div class="p-bar-track" style="height:4px;margin-bottom:4px"><div class="p-bar-fill" style="width:'+(tok/maxModelTok*100)+'%;background:'+col+'"></div></div>'
       + '<div style="font-size:10px;color:#9ca3af;display:flex;gap:12px">'
       + '<span>' + m.sources.map(s => escHtml(SOURCE_LABELS[s] || s)).join(', ') + '</span>'
-      + '<span>' + fmt(mTok) + ' tk</span>'
       + '<span>' + m.eventCount + ' req</span>'
       + '</div></div>';
   });
@@ -1608,41 +1610,41 @@ function buildDailyChartPopup(data) {
 }
 
 function buildSourceChartPopup(data) {
-  const total = Math.max(data.totals.costUSD, 0.000001);
-  const dSegs = data.bySource.map(s => ({
-    pct: s.costUSD / total,
+  const sourceTok = data.bySource.map(s => ({
+    source: s.source,
+    tokens: s.tokens,
+    total: s.tokens.input + s.tokens.output + s.tokens.cacheRead + s.tokens.cacheCreation + (s.tokens.reasoning || 0)
+  }));
+  const total = Math.max(sourceTok.reduce((a, b) => a + b.total, 0), 1);
+  const dSegs = sourceTok.map(s => ({
+    pct: s.total / total,
     color: SOURCE_COLORS[s.source] || '#aaa',
     label: SOURCE_LABELS[s.source] || s.source,
-    val: s.costUSD
+    val: s.total
   }));
 
   let html = '';
-  
+
   html += '<div class="p-donut-wrap">'
     + pDonut(dSegs, 160, 24)
     + '<div class="p-donut-legend">'
     + dSegs.map(s => '<div class="p-donut-legend-item"><div class="p-donut-legend-dot" style="background:'+s.color+'"></div><div style="flex:1;color:#d1d5db">'+s.label+'</div><div style="font-weight:600;color:#fff">'+pctStr(s.val, total)+'</div></div>').join('')
     + '</div></div>';
 
-  html += pSection('Provider Efficiency');
-  const maxEff = Math.max(...data.bySource.map(s => {
-    const tk = s.tokens.input + s.tokens.output + s.tokens.cacheRead + s.tokens.cacheCreation;
-    return tk > 0 ? s.costUSD / tk * 1000000 : 0;
-  }), 0.01);
-  
-  data.bySource.forEach(s => {
+  html += pSection('Token Volume by Provider');
+  const maxTok = Math.max(...sourceTok.map(s => s.total), 1);
+
+  sourceTok.forEach(s => {
     const cIn = s.tokens.input + s.tokens.cacheRead;
     const cacheHit = cIn > 0 ? Math.round(s.tokens.cacheRead / cIn * 100) : 0;
-    const sTok = s.tokens.input + s.tokens.output + s.tokens.cacheRead + s.tokens.cacheCreation + (s.tokens.reasoning || 0);
-    const costM = sTok > 0 ? s.costUSD / sTok * 1000000 : 0;
     const col = SOURCE_COLORS[s.source] || '#aaa';
-    
+
     html += '<div style="margin-bottom:14px">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px">'
       + '<div style="font-weight:600;color:'+col+'">' + escHtml(SOURCE_LABELS[s.source] || s.source) + ' <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:6px">' + cacheHit + '% cache hit</span></div>'
-      + '<div style="font-size:12px;color:#e5e7eb">' + fmtUSD(costM) + ' <span style="color:#6b7280;font-size:10px">/ 1M tok</span></div>'
+      + '<div style="font-size:12px;color:#e5e7eb">' + fmtTokens(s.total) + ' <span style="color:#6b7280;font-size:10px">tokens</span></div>'
       + '</div>'
-      + '<div class="p-bar-track"><div class="p-bar-fill" style="width:'+(costM/maxEff*100)+'%;background:'+col+'"></div></div>'
+      + '<div class="p-bar-track"><div class="p-bar-fill" style="width:'+(s.total/maxTok*100)+'%;background:'+col+'"></div></div>'
       + '</div>';
   });
 
