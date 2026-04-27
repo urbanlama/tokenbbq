@@ -150,6 +150,8 @@ export function renderExpanded(
   if (usage.extra_usage && usage.extra_usage.is_enabled) {
     const ex = usage.extra_usage;
     const pct = ex.utilization ?? 0;
+    const used = ex.used_credits ?? 0;
+    const limit = ex.monthly_limit ?? 0;
     const tier = colorTier(pct);
     const color = `var(--${tier})`;
     const glow = `var(--${tier}-glow)`;
@@ -158,7 +160,7 @@ export function renderExpanded(
         <div class="usage-row-header">
           <span class="usage-row-name"><span class="dot" style="background:${color};box-shadow:0 0 4px ${glow}"></span>Extra Usage</span>
           <span class="credits-amount">
-            <span class="used">&euro;${(ex.used_credits / 100).toFixed(2)}</span><span class="sep">/</span><span class="total">&euro;${(ex.monthly_limit / 100).toFixed(0)}</span>
+            <span class="used">&euro;${(used / 100).toFixed(2)}</span><span class="sep">/</span><span class="total">&euro;${(limit / 100).toFixed(0)}</span>
           </span>
         </div>
         <div class="progress-track"><div class="progress-fill ${tier}" style="width:${pct}%"></div></div>
