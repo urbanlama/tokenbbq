@@ -48,11 +48,29 @@ npx tokenbbq                # Dashboard in browser (default)
 npx tokenbbq daily          # Daily table in terminal
 npx tokenbbq monthly        # Monthly table in terminal
 npx tokenbbq summary        # Compact summary
+npx tokenbbq scan           # DashboardData JSON to stdout (headless one-shot)
 npx tokenbbq --json         # JSON to stdout
 npx tokenbbq --port=8080    # Custom port
 npx tokenbbq --no-open      # Don't auto-open browser
 npx tokenbbq --help         # Show help
 ```
+
+## Desktop Widget (Windows)
+
+An always-on-top pill that lives at the top of your screen and shows your claude.ai 5-hour and 7-day window utilisation alongside today's local AI tool token spend, with a one-click expand to a per-source breakdown and a "Open full dashboard" button that launches the same dashboard `npx tokenbbq` opens.
+
+Grab the latest installer from the [Releases page](https://github.com/offbyone1/tokenbbq/releases) — both NSIS (`.exe`) and MSI variants are published. The widget bundles the TokenBBQ CLI as a standalone binary, so end users don't need Node.js.
+
+### Building the widget locally
+
+```bash
+npm install
+npm install --prefix widget        # one-time
+npm run widget:dev                 # hot-reloading dev build
+npm run widget:build               # produces NSIS + MSI under widget/src-tauri/target/release/bundle/
+```
+
+`widget:build` requires [Bun](https://bun.sh) on PATH (used to compile the CLI to a standalone sidecar). `widget:dev` falls back to a Node-based sidecar if Bun is missing.
 
 ## How It Works
 
