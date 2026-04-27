@@ -1,6 +1,5 @@
 import pc from 'picocolors';
 import { existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import path from 'node:path';
 import { loadAll, getAllWatchPaths } from './loaders/index.js';
 import { enrichCosts } from './pricing.js';
@@ -50,24 +49,14 @@ ${pc.cyan('Supported Tools:')}
 `);
 }
 
+// Only honour an explicit TOKENBBQ_LOGO_PATH. Without it, the dashboard
+// falls back to its inline SVG flame/coin mark — no need to hunt for a
+// PNG in the user's Downloads folder.
 function getDashboardBrandLogoPath(): string | null {
 	const envPath = (process.env.TOKENBBQ_LOGO_PATH ?? '').trim();
-	if (envPath !== '') {
-		const resolved = path.resolve(envPath);
-		if (existsSync(resolved)) return resolved;
-	}
-
-	const candidates = [
-		path.join(homedir(), 'Downloads', 'tokenbbq.png'),
-		'C:\\download\\tokenbbq.png',
-		'C:\\Download\\tokenbbq.png',
-	];
-
-	for (const candidate of candidates) {
-		if (existsSync(candidate)) return candidate;
-	}
-
-	return null;
+	if (envPath === '') return null;
+	const resolved = path.resolve(envPath);
+	return existsSync(resolved) ? resolved : null;
 }
 
 async function main(): Promise<void> {
