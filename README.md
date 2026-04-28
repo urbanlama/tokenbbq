@@ -59,10 +59,14 @@ npx tokenbbq --help         # Show help
 
 An always-on-top pill that lives at the top of your screen and shows your claude.ai 5-hour and 7-day window utilisation alongside today's local AI tool token spend, with a one-click expand to a per-source breakdown and a "Open full dashboard" button that launches the same dashboard `npx tokenbbq` opens.
 
-Grab the latest installer from the [Releases page](https://github.com/offbyone1/tokenbbq/releases):
+**Download the latest release:** [github.com/offbyone1/tokenbbq/releases/latest](https://github.com/offbyone1/tokenbbq/releases/latest)
 
-- **Windows** — `.exe` (NSIS) or `.msi`
-- **macOS (Apple Silicon)** — `.dmg`. The build is unsigned, so on first launch macOS will refuse to open it; right-click the app → **Open** → **Open** to bypass Gatekeeper once.
+| Platform | File |
+|---|---|
+| **Windows** | `TokenBBQ_<version>_x64-setup.exe` (NSIS, recommended) or `TokenBBQ_<version>_x64_en-US.msi` |
+| **macOS** (Apple Silicon, M1+) | `TokenBBQ_<version>_aarch64.dmg` |
+
+The macOS build is unsigned, so on first launch Gatekeeper will refuse to open it — right-click the app → **Open** → **Open** in the dialog to bypass once. Same story on Windows: SmartScreen will warn → **More info** → **Run anyway**.
 
 The widget bundles the TokenBBQ CLI as a standalone binary, so end users don't need Node.js.
 
