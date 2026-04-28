@@ -78,6 +78,10 @@ async function init(): Promise<void> {
   const settings = await invoke<SettingsDisplay>("load_settings");
 
   if (settings.has_session_key) {
+    // Resync window size to compact in case a Vite hot-reload (or any prior
+    // state desync) left the window at expanded dimensions while the JS
+    // state booted in compact mode.
+    await setViewState("compact");
     startPolling();
   } else {
     await expand();
@@ -189,9 +193,15 @@ async function saveSettings(): Promise<void> {
 // --- Drag & Events ---
 
 function setupDragRegions(): void {
-  document.getElementById("pill-grip")!.addEventListener("mousedown", async () => {
+  const grip = document.getElementById("pill-grip")!;
+  grip.addEventListener("mousedown", async (e) => {
+    e.stopPropagation();
     await getCurrentWindow().startDragging();
   });
+  // After a drag, the browser still dispatches a click on the grip (mousedown
+  // + mouseup on the same element). That click would bubble up to compact-view
+  // and trigger expand(). Swallow it.
+  grip.addEventListener("click", (e) => e.stopPropagation());
 
   document.querySelectorAll(".titlebar").forEach((el) => {
     el.addEventListener("mousedown", async (e) => {
