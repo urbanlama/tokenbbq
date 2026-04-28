@@ -58,7 +58,7 @@
 
 body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--card);
+  background: transparent;
   color: var(--text-primary);
   overflow: hidden;
   user-select: none;
