@@ -43,7 +43,15 @@ jobs:
   build-widget:
     name: Build widget installer + attach to Release
     needs: publish-cli
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+          - platform: macos-14
+            rust_target: aarch64-apple-darwin
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,6 +65,8 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
 
       - name: Cache Cargo build
         uses: Swatinem/rust-cache@v2
@@ -77,7 +87,9 @@ jobs:
         working-directory: widget
 
       # tauri-action runs `tauri build` and uploads the produced installers
-      # (NSIS .exe + MSI on Windows) to the existing Release matching the tag.
+      # to the existing Release matching the tag:
+      #   Windows → NSIS .exe + MSI
+      #   macOS   → .dmg + .app (unsigned; first launch needs right-click → Open)
       - name: Build & upload Tauri installer
         uses: tauri-apps/tauri-action@v0
         env:
@@ -86,3 +98,4 @@ jobs:
           projectPath: widget
           tagName: ${{ github.ref_name }}
           releaseId: ${{ needs.publish-cli.outputs.release_id }}
+          args: --target ${{ matrix.rust_target }}
