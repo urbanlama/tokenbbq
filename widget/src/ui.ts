@@ -87,9 +87,9 @@ function formatHoursCompact(isoString: string | null): string {
   if (!isoString) return "";
   const diffMs = new Date(isoString).getTime() - Date.now();
   if (diffMs <= 0) return "0m";
-  const totalMin = Math.floor(diffMs / 60000);
+  const totalMin = Math.round(diffMs / 60000);
   if (totalMin < 60) return `${totalMin}m`;
-  return `${Math.floor(totalMin / 60)}h`;
+  return `${Math.round(totalMin / 60)}h`;
 }
 
 function formatDaysCompact(isoString: string | null): string {
