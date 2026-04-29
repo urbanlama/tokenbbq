@@ -181,14 +181,18 @@ pub async fn auto_detect_org(client: State<'_, reqwest::Client>, session_key: St
 
 /// Resolve how to invoke TokenBBQ's `scan` subcommand. Returns the program +
 /// argument list ready for std::process::Command. Resolution order:
-///   1. TOKENBBQ_SIDECAR_PATH env var.
-///   2. Bundled sidecar next to the widget binary — Tauri's `externalBin`
+///   1. TOKENBBQ_SIDECAR_PATH env var (always wins — explicit override).
+///   2. Debug-only: `<repo>/dist/index.js` via Node. Preferred over the
+///      bundled exe in dev because the latter is whatever was Bun-compiled
+///      last (often stale on machines without Bun on PATH), and Bun-compiled
+///      Windows binaries have spawn-from-GUI quirks that manifest as silent
+///      hangs when the parent process is the Tauri webview host.
+///   3. Bundled sidecar next to the widget binary — Tauri's `externalBin`
 ///      mechanism copies `binaries/tokenbbq-<triple>{.exe}` to the install
-///      dir as `tokenbbq{.exe}`, so we look there first. This is the
-///      production path on installed builds and `tauri dev`.
-///   3. Dev fallback: `<repo>/dist/index.js` resolved relative to this crate's
-///      manifest dir at compile time. Used when running the widget without
-///      a freshly built sidecar (e.g. iterating on UI only).
+///      dir as `tokenbbq{.exe}`. This is the production path; CI rebuilds
+///      the Bun binary on every release so freshness is guaranteed there.
+///   4. Release fallback: `<repo>/dist/index.js` (same path as step 2 but
+///      reached only if the bundled exe is missing).
 fn resolve_tokenbbq_invocation() -> Result<(PathBuf, Vec<String>), String> {
     if let Ok(env_path) = std::env::var("TOKENBBQ_SIDECAR_PATH") {
         let p = PathBuf::from(&env_path);
@@ -196,6 +200,19 @@ fn resolve_tokenbbq_invocation() -> Result<(PathBuf, Vec<String>), String> {
             return Err(format!("TOKENBBQ_SIDECAR_PATH does not point to an existing file: {}", env_path));
         }
         return Ok(invocation_for(p));
+    }
+
+    let dev_fallback = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("dist")
+        .join("index.js");
+
+    #[cfg(debug_assertions)]
+    {
+        if dev_fallback.exists() {
+            return Ok(invocation_for(dev_fallback.clone()));
+        }
     }
 
     if let Ok(exe) = std::env::current_exe() {
@@ -208,11 +225,6 @@ fn resolve_tokenbbq_invocation() -> Result<(PathBuf, Vec<String>), String> {
         }
     }
 
-    let dev_fallback = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("dist")
-        .join("index.js");
     if dev_fallback.exists() {
         return Ok(invocation_for(dev_fallback));
     }
@@ -282,6 +294,12 @@ pub async fn fetch_local_usage() -> Result<LocalUsageSummary, String> {
     let output = tokio::task::spawn_blocking(move || {
         std::process::Command::new(&program)
             .args(&args)
+            // Explicitly null stdin — when the widget runs as a GUI process
+            // there is no inherited tty, and Bun-compiled binaries have been
+            // observed to hang during init on Windows when stdin is left as
+            // the default (inherit). Belt + suspenders for the bundled-binary
+            // codepath.
+            .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
