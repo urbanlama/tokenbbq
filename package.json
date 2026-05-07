@@ -46,7 +46,7 @@
 		"dev": "node scripts/inline-wasm.mjs && node --import tsx src/index.ts",
 		"start": "node dist/index.js",
 		"lint": "node scripts/inline-wasm.mjs && tsc --noEmit",
-		"test": "node --test --import tsx \"src/**/*.test.ts\"",
+		"test": "node scripts/run-tests.mjs",
 		"prepublishOnly": "npm run build",
 		"build:sidecar": "node scripts/inline-wasm.mjs && node scripts/build-sidecar.mjs",
 		"widget:install": "npm install --prefix widget",
