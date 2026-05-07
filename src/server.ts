@@ -2,9 +2,18 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { serve } from '@hono/node-server';
 import { createServer } from 'node:net';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
 import type { DashboardData } from './types.js';
 import { renderDashboard } from './dashboard.js';
+
+const BRAND_LOGO_MAX_BYTES = 10 * 1024 * 1024;
+const BRAND_LOGO_CONTENT_TYPES: Record<string, string> = {
+	'.png': 'image/png',
+	'.jpg': 'image/jpeg',
+	'.jpeg': 'image/jpeg',
+	'.webp': 'image/webp',
+};
 
 function isPortFree(port: number): Promise<boolean> {
 	return new Promise((resolve) => {
@@ -93,7 +102,12 @@ export async function startServer(
 	});
 
 	app.get('/api/data', async (c) => {
-		return c.json(await readData(true));
+		// Use the cached payload + 3s debounce. Each open browser tab polls
+		// every 5s; `force=true` here would mean every tab triggers its own
+		// full filesystem rescan independent of the others, multiplying disk
+		// load by tab count for no benefit (the SSE stream already pushes
+		// real updates when the watcher sees a file change).
+		return c.json(await readData());
 	});
 
 	app.get('/api/stream', (c) => {
@@ -128,10 +142,19 @@ export async function startServer(
 
 	app.get('/brand-logo', async (c) => {
 		if (!options.brandLogoPath) return c.notFound();
+		// `TOKENBBQ_LOGO_PATH` is user-provided. Accept only image extensions
+		// (so the route can't be turned into an arbitrary-file-read primitive
+		// against a server bound to LAN), and stat the file before reading so
+		// a 5 GB file can't OOM the process.
+		const ext = path.extname(options.brandLogoPath).toLowerCase();
+		const contentType = BRAND_LOGO_CONTENT_TYPES[ext];
+		if (!contentType) return c.notFound();
 		try {
+			const info = await stat(options.brandLogoPath);
+			if (!info.isFile() || info.size > BRAND_LOGO_MAX_BYTES) return c.notFound();
 			const file = await readFile(options.brandLogoPath);
 			return c.body(file, 200, {
-				'Content-Type': 'image/png',
+				'Content-Type': contentType,
 				'Cache-Control': 'no-cache, no-store, must-revalidate',
 			});
 		} catch {
@@ -145,7 +168,10 @@ export async function startServer(
 		process.exit(1);
 	}
 
-	const server = serve({ fetch: app.fetch, port }, (info) => {
+	// Bind to loopback only. The dashboard exposes /api/data unauthenticated
+	// — project names, model IDs, session IDs — which has no business being
+	// reachable from anything other than this machine.
+	const server = serve({ fetch: app.fetch, port, hostname: '127.0.0.1' }, (info) => {
 		const url = `http://localhost:${info.port}`;
 		console.log(`\n  Dashboard running at ${url}\n`);
 		if (port !== options.port) {

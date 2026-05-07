@@ -629,7 +629,7 @@ function renderSourcesList(data) {
   const html = sortSourceList(data.bySource.map(s => s.source)).map(source =>
     '<span class="inline-block px-2 py-0.5 rounded text-xs mr-1" style="background:' +
     SOURCE_COLORS[source] + '22;color:' + SOURCE_COLORS[source] + '">' +
-    (SOURCE_LABELS[source] || source) + '</span>'
+    escapeHtml(SOURCE_LABELS[source] || source) + '</span>'
   ).join('');
   document.getElementById('sourcesList').innerHTML = html || '<span class="text-gray-500">No active sources</span>';
 }
@@ -1016,7 +1016,7 @@ function renderTable(data) {
     const srcs = sortSourceList(d.sources).map(s =>
       '<span class="inline-block px-1.5 py-0.5 rounded text-xs" style="background:' +
       SOURCE_COLORS[s] + '22;color:' + SOURCE_COLORS[s] + '">' +
-      (SOURCE_LABELS[s] || s) + '</span>'
+      escapeHtml(SOURCE_LABELS[s] || s) + '</span>'
     ).join(' ');
     tr.innerHTML =
       '<td class="py-2 px-3 text-gray-300 dark:text-gray-300 light:text-gray-700"><span class="inline-flex items-center gap-2"><span class="daily-row-toggle' + (isExpanded ? ' open' : '') + '">▸</span><span>' + d.date + '</span></span></td>' +
@@ -1038,7 +1038,7 @@ function renderTable(data) {
       const childTr = document.createElement('tr');
       childTr.className = 'table-child-row border-b border-border/30';
       childTr.style.background = 'rgba(255,255,255,0.02)';
-      const childSource = SOURCE_LABELS[child.source] || child.source;
+      const childSource = escapeHtml(SOURCE_LABELS[child.source] || child.source);
       childTr.innerHTML =
         '<td class="py-2 px-3 text-gray-500 dark:text-gray-500 light:text-gray-500"><span class="table-tree-label"><span class="table-tree-line">└</span><span>' + childSource + '</span></span></td>' +
         '<td class="py-2 px-3"><div class="pl-4"><span class="inline-block px-1.5 py-0.5 rounded text-xs" style="background:' + SOURCE_COLORS[child.source] + '22;color:' + SOURCE_COLORS[child.source] + '">' + childSource + '</span></div></td>' +
@@ -1114,7 +1114,7 @@ function renderProjects(data) {
     const chips = p.sources.map(s =>
       '<span class="inline-block px-1.5 py-0.5 rounded text-xs" style="background:' +
       SOURCE_COLORS[s] + '22;color:' + SOURCE_COLORS[s] + '">' +
-      (SOURCE_LABELS[s] || s) + '</span>'
+      escapeHtml(SOURCE_LABELS[s] || s) + '</span>'
     ).join(' ');
 
     const isOpen = expandedProjects.has(p.projectPath || p.project);
@@ -1144,7 +1144,7 @@ function renderProjects(data) {
           const chip =
             '<span class="inline-block px-1.5 py-0.5 rounded text-xs" style="background:' +
             SOURCE_COLORS[s.source] + '22;color:' + SOURCE_COLORS[s.source] + '">' +
-            (SOURCE_LABELS[s.source] || s.source) + '</span>';
+            escapeHtml(SOURCE_LABELS[s.source] || s.source) + '</span>';
           const subTr = document.createElement('tr');
           subTr.className = 'project-subrow bg-black/10 dark:bg-black/20 light:bg-gray-50 border-b border-border/30';
           subTr.innerHTML =
@@ -1253,12 +1253,9 @@ document.addEventListener('visibilitychange', () => {
 
 // ===== POPUP SYSTEM =====
 
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 function pctStr(a, b) { return b > 0 ? (a / b * 100).toFixed(1) + '%' : '—'; }
 function pSection(title) {
-  return '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;margin:24px 0 8px;padding-top:2px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:6px">' + escHtml(title) + '</div>';
+  return '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;margin:24px 0 8px;padding-top:2px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:6px">' + escapeHtml(title) + '</div>';
 }
 
 // Visual Helpers
@@ -1320,7 +1317,7 @@ function pProgressRing(pct, color, size = 80, stroke = 8) {
 }
 function pBarRow(label, valStr, pct, color) {
   return '<div class="p-bar-row">'
-    + '<div class="p-bar-label" title="'+escHtml(label)+'">'+escHtml(label)+'</div>'
+    + '<div class="p-bar-label" title="'+escapeHtml(label)+'">'+escapeHtml(label)+'</div>'
     + '<div class="p-bar-track"><div class="p-bar-fill" style="width:'+(pct*100)+'%;background:'+color+'"></div></div>'
     + '<div class="p-bar-val">'+valStr+'</div>'
     + '</div>';
@@ -1328,16 +1325,16 @@ function pBarRow(label, valStr, pct, color) {
 
 function pRow(label, value, sub) {
   return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">'
-    + '<span style="color:#9ca3af;font-size:13px">' + escHtml(label) + '</span>'
+    + '<span style="color:#9ca3af;font-size:13px">' + escapeHtml(label) + '</span>'
     + '<span style="color:#f3f4f6;font-size:13px;font-weight:500;text-align:right;margin-left:16px">'
-    + value + (sub ? '<div style="font-size:11px;color:#6b7280;font-weight:400">' + escHtml(sub) + '</div>' : '')
+    + value + (sub ? '<div style="font-size:11px;color:#6b7280;font-weight:400">' + escapeHtml(sub) + '</div>' : '')
     + '</span></div>';
 }
 function pTable(headers, rows) {
   let h = '<div style="overflow-x:auto;margin-top:4px"><table style="width:100%;border-collapse:collapse;font-size:12px">';
   h += '<thead><tr>';
   headers.forEach((hdr, i) => {
-    h += '<th style="padding:3px 8px 5px;color:#6b7280;font-weight:500;text-align:' + (i === 0 ? 'left' : 'right') + ';white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.07)">' + escHtml(hdr) + '</th>';
+    h += '<th style="padding:3px 8px 5px;color:#6b7280;font-weight:500;text-align:' + (i === 0 ? 'left' : 'right') + ';white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.07)">' + escapeHtml(hdr) + '</th>';
   });
   h += '</tr></thead><tbody>';
   rows.forEach((row, ri) => {
@@ -1545,7 +1542,7 @@ function buildCostPopup(data) {
   const dSegs = data.bySource.map(s => ({
     pct: s.costUSD / Math.max(t.costUSD, 0.001),
     color: SOURCE_COLORS[s.source] || '#aaa',
-    label: SOURCE_LABELS[s.source] || s.source,
+    label: escapeHtml(SOURCE_LABELS[s.source] || s.source),
     val: s.costUSD
   }));
 
@@ -1728,12 +1725,12 @@ function buildTopModelPopup(data) {
     const col = SOURCE_COLORS[m.sources[0]] || BRAND_COLORS.primary;
     html += '<div style="margin-bottom:12px">'
       + '<div style="display:flex;justify-content:space-between;margin-bottom:4px">'
-      + '<span style="font-family:monospace;font-size:12px;color:#e5e7eb">' + escHtml(shortModel(m.model)) + '</span>'
+      + '<span style="font-family:monospace;font-size:12px;color:#e5e7eb">' + escapeHtml(shortModel(m.model)) + '</span>'
       + '<span style="font-size:12px;font-weight:600;color:'+col+'">' + fmtTokens(tok) + ' <span style="font-weight:400;color:#6b7280;font-size:11px;margin-left:6px">(' + pctStr(tok, totalTok) + ')</span></span>'
       + '</div>'
       + '<div class="p-bar-track" style="height:4px;margin-bottom:4px"><div class="p-bar-fill" style="width:'+(tok/maxModelTok*100)+'%;background:'+col+'"></div></div>'
       + '<div style="font-size:10px;color:#9ca3af;display:flex;gap:12px">'
-      + '<span>' + m.sources.map(s => escHtml(SOURCE_LABELS[s] || s)).join(', ') + '</span>'
+      + '<span>' + m.sources.map(s => escapeHtml(SOURCE_LABELS[s] || s)).join(', ') + '</span>'
       + '<span>' + m.eventCount + ' req</span>'
       + '</div></div>';
   });
@@ -1797,7 +1794,7 @@ function buildSourceChartPopup(data) {
   const dSegs = sourceTok.map(s => ({
     pct: s.total / total,
     color: SOURCE_COLORS[s.source] || '#aaa',
-    label: SOURCE_LABELS[s.source] || s.source,
+    label: escapeHtml(SOURCE_LABELS[s.source] || s.source),
     val: s.total
   }));
 
@@ -1819,7 +1816,7 @@ function buildSourceChartPopup(data) {
 
     html += '<div style="margin-bottom:14px">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px">'
-      + '<div style="font-weight:600;color:'+col+'">' + escHtml(SOURCE_LABELS[s.source] || s.source) + ' <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:6px">' + cacheHit + '% cache hit</span></div>'
+      + '<div style="font-weight:600;color:'+col+'">' + escapeHtml(SOURCE_LABELS[s.source] || s.source) + ' <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:6px">' + cacheHit + '% cache hit</span></div>'
       + '<div style="font-size:12px;color:#e5e7eb">' + fmtTokens(s.total) + ' <span style="color:#6b7280;font-size:10px">tokens</span></div>'
       + '</div>'
       + '<div class="p-bar-track"><div class="p-bar-fill" style="width:'+(s.total/maxTok*100)+'%;background:'+col+'"></div></div>'
