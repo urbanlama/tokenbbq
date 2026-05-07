@@ -82,7 +82,18 @@ export async function loadGeminiEvents(): Promise<UnifiedTokenEvent[]> {
 			let output = ensureNum(tokens.output) + tool;
 			const total = ensureNum(tokens.total);
 
-			const known = input + output + cacheRead + reasoning;
+			// Gemini sessions today record `cached` (cache reads) but no
+			// cache-write field. If a future schema starts emitting one of
+			// the obvious names, pick it up so it can't quietly fold into
+			// `output` via the overflow line below and get charged at the
+			// output rate.
+			const cacheCreation =
+				ensureNum(tokens.cache_creation) ||
+				ensureNum(tokens.cacheCreation) ||
+				ensureNum(tokens.cacheWrite) ||
+				ensureNum(tokens.cache_write);
+
+			const known = input + output + cacheRead + cacheCreation + reasoning;
 			if (total > known) output += total - known;
 			if (input === 0 && output === 0 && cacheRead === 0 && reasoning === 0) continue;
 
@@ -109,7 +120,7 @@ export async function loadGeminiEvents(): Promise<UnifiedTokenEvent[]> {
 				tokens: {
 					input,
 					output,
-					cacheCreation: 0,
+					cacheCreation,
 					cacheRead,
 					reasoning,
 				},

@@ -25,7 +25,7 @@ function ensureNum(v: unknown): number {
 	return typeof v === 'number' && Number.isFinite(v) ? v : 0;
 }
 
-type RawUsage = {
+export type RawUsage = {
 	input: number;
 	cached: number;
 	output: number;
@@ -33,7 +33,7 @@ type RawUsage = {
 	total: number;
 };
 
-function normalizeUsage(val: unknown): RawUsage | null {
+export function normalizeUsage(val: unknown): RawUsage | null {
 	if (!val || typeof val !== 'object') return null;
 	const r = val as Record<string, unknown>;
 	const input = ensureNum(r.input_tokens);
@@ -44,7 +44,7 @@ function normalizeUsage(val: unknown): RawUsage | null {
 	return { input, cached, output, reasoning, total: total > 0 ? total : input + output };
 }
 
-function subtractUsage(cur: RawUsage, prev: RawUsage | null): RawUsage {
+export function subtractUsage(cur: RawUsage, prev: RawUsage | null): RawUsage {
 	return {
 		input: Math.max(cur.input - (prev?.input ?? 0), 0),
 		cached: Math.max(cur.cached - (prev?.cached ?? 0), 0),

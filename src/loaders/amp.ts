@@ -65,12 +65,18 @@ export async function loadAmpEvents(): Promise<UnifiedTokenEvent[]> {
 			const outputTokens = Number(tokens?.output ?? 0);
 			if (inputTokens === 0 && outputTokens === 0) continue;
 
-			const toMessageId = evt.toMessageId as number | undefined;
+			const toMessageId = evt.toMessageId;
 			let cacheCreation = 0;
 			let cacheRead = 0;
 			if (toMessageId != null) {
+				// Amp's `toMessageId` is sometimes a number, sometimes a string,
+				// and `messageId` on the matching assistant message can disagree
+				// per-version. Strict `===` would silently miss every match and
+				// zero out cache tokens for the entire thread; coerce both to
+				// String() to compare value-only.
+				const target = String(toMessageId);
 				const assistantMsg = messages.find(
-					(m) => m.role === 'assistant' && m.messageId === toMessageId,
+					(m) => m.role === 'assistant' && String(m.messageId) === target,
 				);
 				const usage = assistantMsg?.usage as Record<string, unknown> | undefined;
 				if (usage) {
