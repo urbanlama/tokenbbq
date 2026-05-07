@@ -52,7 +52,7 @@ function findModelPricing(
 ): ModelPricing | null {
 	if (prices[modelName]) return prices[modelName];
 
-	const prefixes = ['anthropic/', 'openai/', 'openrouter/openai/', ''];
+	const prefixes = ['anthropic/', 'openai/', 'openrouter/openai/', 'gemini/', ''];
 	for (const prefix of prefixes) {
 		const key = prefix + modelName;
 		if (prices[key]) return prices[key];
@@ -64,12 +64,12 @@ function findModelPricing(
 	const baseMatch = modelName.replace(/-\d{8}$/, '');
 	if (baseMatch !== modelName) return findModelPricing(prices, baseMatch);
 
-	for (const key of Object.keys(prices)) {
-		if (key.includes(modelName) || modelName.includes(key.replace(/^[^/]+\//, ''))) {
-			return prices[key];
-		}
-	}
-
+	// No fuzzy substring match. The previous loop would return the first
+	// `key.includes(modelName)` hit, which is order-dependent on the JSON
+	// keys LiteLLM ships — `gpt-4` could match `gpt-4o` or `gpt-4-turbo`
+	// depending on iteration order, silently mispricing every event for
+	// that model. If we don't have an exact or prefix match, return null
+	// and let `enrichCosts` keep `costUSD: 0` rather than make up a price.
 	return null;
 }
 

@@ -123,7 +123,13 @@ export async function loadOpenCodeEvents(opts: LoaderOptions = { quiet: false })
         if (input === 0 && output === 0 && cacheRead === 0 && cacheCreation === 0 && reasoning === 0) continue;
 
         const time = payload.time as Record<string, unknown> | undefined;
-        const timestampMs = numberOr(time?.created, row.time_created);
+        let timestampMs = numberOr(time?.created, row.time_created);
+        // OpenCode's `time_created` column has no unit suffix; the value
+        // ranges across schema versions between seconds (Unix) and
+        // milliseconds. Anything under 1e12 (≈ year 2001 in ms) is almost
+        // certainly seconds — multiply to ms before constructing the Date,
+        // otherwise the entire OpenCode history aggregates as January 1970.
+        if (timestampMs > 0 && timestampMs < 1e12) timestampMs *= 1000;
         const ts = new Date(timestampMs);
         if (Number.isNaN(ts.getTime())) continue;
         const timestamp = ts.toISOString();
