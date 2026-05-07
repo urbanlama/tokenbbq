@@ -15,9 +15,14 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
+# Job order is build-everything → publish-everything. A failure in
+# `build-widget` used to leave npm published but no widget binaries on the
+# Release — unrecoverable since npm versions are immutable. Now the npm
+# publish + un-drafting of the GitHub Release happen only after every
+# artifact succeeds.
 jobs:
-  publish-cli:
-    name: Publish CLI to npm + create Release
+  prepare-release:
+    name: Build CLI + create draft Release
     runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.create_release.outputs.id }}
@@ -28,28 +33,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build CLI
         run: npm run build
 
-      - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create GitHub Release
+      - name: Create draft Release
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          draft: true
 
   build-widget:
-    name: Build widget installer + attach to Release
-    needs: publish-cli
+    name: Build widget installer + attach to draft Release
+    needs: prepare-release
     strategy:
       fail-fast: false
       matrix:
@@ -93,8 +93,8 @@ jobs:
         run: npm ci
         working-directory: widget
 
-      # tauri-action runs `tauri build` and uploads the produced installers
-      # to the existing Release matching the tag:
+      # tauri-action runs `tauri build` and uploads installers to the
+      # draft Release created by `prepare-release`:
       #   Windows → NSIS .exe + MSI
       #   macOS   → .dmg + .app (unsigned; first launch needs right-click → Open)
       - name: Build & upload Tauri installer
@@ -104,5 +104,35 @@ jobs:
         with:
           projectPath: widget
           tagName: ${{ github.ref_name }}
-          releaseId: ${{ needs.publish-cli.outputs.release_id }}
+          releaseId: ${{ needs.prepare-release.outputs.release_id }}
           args: --target ${{ matrix.rust_target }}
+
+  publish:
+    name: Publish CLI to npm + un-draft Release
+    needs: [prepare-release, build-widget]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build CLI
+        run: npm run build
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Un-draft Release
+        run: gh release edit "$TAG" --draft=false
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

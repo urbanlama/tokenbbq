@@ -80,12 +80,15 @@ export async function calculateCost(model: string, tokens: TokenCounts): Promise
 
 	const inputCost = tokens.input * (pricing.input_cost_per_token ?? 0);
 	const outputCost = tokens.output * (pricing.output_cost_per_token ?? 0);
+	// Cache pricing is provider-specific (Anthropic charges 1.25× input for
+	// writes / 0.1× for reads; OpenAI ~0.5× for reads). When LiteLLM doesn't
+	// publish explicit cache rates for a model, fall back to 0 — falling back
+	// to the input rate would inflate cache-read cost up to 10× (Anthropic)
+	// and silently misprice every Claude Code session.
 	const cacheCreateCost =
-		tokens.cacheCreation *
-		(pricing.cache_creation_input_token_cost ?? pricing.input_cost_per_token ?? 0);
+		tokens.cacheCreation * (pricing.cache_creation_input_token_cost ?? 0);
 	const cacheReadCost =
-		tokens.cacheRead *
-		(pricing.cache_read_input_token_cost ?? pricing.input_cost_per_token ?? 0);
+		tokens.cacheRead * (pricing.cache_read_input_token_cost ?? 0);
 
 	return inputCost + outputCost + cacheCreateCost + cacheReadCost;
 }

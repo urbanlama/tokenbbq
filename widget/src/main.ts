@@ -26,6 +26,10 @@ async function fetchUsage(): Promise<void> {
     renderExpanded(usage, lastLocal);
   } catch (e) {
     renderError(String(e));
+    // Drop the cached payload so the next successful fetch re-renders even
+    // if claude.ai returns the exact same JSON it did before the error —
+    // otherwise the UI stays stuck on "err" until the upstream values move.
+    lastUsageJson = "";
   }
 }
 
