@@ -29,12 +29,12 @@ pub struct Settings {
     pub org_id: Option<String>,
 }
 
-/// Settings returned to the frontend. Session key comes from the OS
-/// credential store, never the JSON store.
+/// Settings returned to the frontend. The plaintext session key never
+/// leaves the OS credential store — only its presence as a flag, plus
+/// non-secret metadata. Anything more would defeat the keyring migration.
 #[derive(Debug, Clone, Serialize)]
 pub struct SettingsDisplay {
     pub has_session_key: bool,
-    pub session_key: Option<String>,
     pub org_id: Option<String>,
     pub saved_at: Option<u64>,
 }

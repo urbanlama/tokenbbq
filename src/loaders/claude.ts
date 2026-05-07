@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { glob } from 'tinyglobby';
 import type { UnifiedTokenEvent } from '../types.js';
+import { isValidTimestamp } from '../types.js';
 import { resolveProjectRoot } from '../project.js';
 
 const HOME = homedir();
@@ -28,7 +29,7 @@ function getClaudePaths(): string[] {
 }
 
 function parseLine(raw: Record<string, unknown>): UnifiedTokenEvent | null {
-	if (typeof raw.timestamp !== 'string') return null;
+	if (!isValidTimestamp(raw.timestamp)) return null;
 
 	const message = raw.message as Record<string, unknown> | undefined;
 	if (!message) return null;

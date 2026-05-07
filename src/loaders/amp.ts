@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { glob } from 'tinyglobby';
 import type { UnifiedTokenEvent } from '../types.js';
+import { isValidTimestamp } from '../types.js';
 
 const HOME = homedir();
 
@@ -54,6 +55,12 @@ export async function loadAmpEvents(): Promise<UnifiedTokenEvent[]> {
 		const messages = (thread.messages ?? []) as Record<string, unknown>[];
 
 		for (const evt of ledgerEvents) {
+			// Skip events without a valid timestamp. Falling back to `now()` here
+			// (the previous behavior) generated a fresh, unique synthetic
+			// timestamp on every scan, so dedup never matched and the same
+			// real-world event accumulated unbounded across scans.
+			if (!isValidTimestamp(evt.timestamp)) continue;
+
 			const tokens = evt.tokens as Record<string, unknown> | undefined;
 			const inputTokens = Number(tokens?.input ?? 0);
 			const outputTokens = Number(tokens?.output ?? 0);
@@ -75,7 +82,7 @@ export async function loadAmpEvents(): Promise<UnifiedTokenEvent[]> {
 
 			events.push({
 				source: 'amp',
-				timestamp: String(evt.timestamp ?? new Date().toISOString()),
+				timestamp: evt.timestamp,
 				sessionId: threadId,
 				model: String(evt.model ?? 'unknown'),
 				tokens: {

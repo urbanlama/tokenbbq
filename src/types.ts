@@ -157,6 +157,14 @@ export function totalTokenCount(t: TokenCounts): number {
 	return t.input + t.output + t.cacheCreation + t.cacheRead + t.reasoning;
 }
 
+// Returns true iff `s` parses to a finite Date. Loaders use this to drop
+// malformed entries at the boundary so a single bad row can't crash the
+// aggregator (which calls `new Date(timestamp).toISOString()` and would
+// throw RangeError on Invalid Date) or poison sums via NaN sort keys.
+export function isValidTimestamp(s: unknown): s is string {
+	return typeof s === 'string' && !Number.isNaN(new Date(s).getTime());
+}
+
 export const SOURCE_LABELS: Record<Source, string> = {
 	'claude-code': 'Claude Code',
 	codex: 'Codex',

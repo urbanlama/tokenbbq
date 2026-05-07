@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { glob } from 'tinyglobby';
 import type { UnifiedTokenEvent } from '../types.js';
+import { isValidTimestamp } from '../types.js';
 
 const HOME = homedir();
 const FALLBACK_MODEL = 'gemini';
@@ -85,8 +86,8 @@ export async function loadGeminiEvents(): Promise<UnifiedTokenEvent[]> {
 			if (total > known) output += total - known;
 			if (input === 0 && output === 0 && cacheRead === 0 && reasoning === 0) continue;
 
-			const timestamp = typeof msg.timestamp === 'string' ? msg.timestamp : null;
-			if (!timestamp) continue;
+			if (!isValidTimestamp(msg.timestamp)) continue;
+			const timestamp = msg.timestamp;
 
 			const id = String(msg.id ?? '');
 			const dedupeKey = id

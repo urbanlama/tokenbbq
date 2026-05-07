@@ -14,7 +14,7 @@ import type {
 	DashboardData,
 	Source,
 } from './types.js';
-import { emptyTokens, addTokens, totalTokenCount } from './types.js';
+import { emptyTokens, addTokens, totalTokenCount, isValidTimestamp } from './types.js';
 
 // Single source of truth for the order sources appear in across the CLI,
 // the dashboard charts, and any new consumer. Add new sources here, not in
@@ -367,6 +367,13 @@ export function aggregateHeatmap(events: UnifiedTokenEvent[]): HeatmapCell[] {
 }
 
 export function buildDashboardData(events: UnifiedTokenEvent[]): DashboardData {
+	// Drop events with malformed timestamps at the pipeline boundary so
+	// `dateKey`/`monthKey` (which call `new Date(ts).toISOString()`) can't
+	// throw RangeError("Invalid time value") and take down the whole render.
+	// Loaders should already filter these, but defending here means a future
+	// loader bug can't crash the dashboard.
+	events = events.filter((e) => isValidTimestamp(e.timestamp));
+
 	const daily = aggregateDaily(events);
 	const dailyBySource = aggregateDailyBySource(events);
 	const dailyByModel = aggregateDailyByModel(events);

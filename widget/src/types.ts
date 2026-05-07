@@ -24,7 +24,6 @@ export interface Settings {
 
 export interface SettingsDisplay {
   has_session_key: boolean;
-  session_key: string | null;
   org_id: string | null;
   saved_at: number | null;
 }

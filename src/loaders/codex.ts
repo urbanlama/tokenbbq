@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { glob } from 'tinyglobby';
 import type { UnifiedTokenEvent } from '../types.js';
+import { isValidTimestamp } from '../types.js';
 import { resolveProjectRoot } from '../project.js';
 
 const HOME = homedir();
@@ -122,7 +123,7 @@ export async function loadCodexEvents(): Promise<UnifiedTokenEvent[]> {
 
 			if (entryType !== 'event_msg') continue;
 			if ((payload as Record<string, unknown>).type !== 'token_count') continue;
-			if (!timestamp) continue;
+			if (!isValidTimestamp(timestamp)) continue;
 
 			const info = payload.info as Record<string, unknown> | undefined;
 			const totalUsage = normalizeUsage(info?.total_token_usage);

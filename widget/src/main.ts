@@ -151,10 +151,12 @@ async function openSettings(): Promise<void> {
   try {
     const settings = await invoke<SettingsDisplay>("load_settings");
     const keyInput = document.getElementById("session-key-input") as HTMLInputElement;
-    if (settings.session_key)
-      keyInput.value = settings.session_key;
-    else
-      keyInput.value = "";
+    // The plaintext key never leaves the OS keyring. Show only that one is
+    // stored; user enters a new key only if they want to replace it.
+    keyInput.value = "";
+    keyInput.placeholder = settings.has_session_key
+      ? "(stored — leave empty to keep)"
+      : "sk-ant-sid02-...";
     if (settings.org_id)
       (document.getElementById("org-id-input") as HTMLInputElement).value = settings.org_id;
 

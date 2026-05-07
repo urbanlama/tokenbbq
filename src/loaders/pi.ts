@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { glob } from 'tinyglobby';
 import type { UnifiedTokenEvent } from '../types.js';
+import { isValidTimestamp } from '../types.js';
 
 const HOME = homedir();
 
@@ -70,7 +71,12 @@ export async function loadPiEvents(): Promise<UnifiedTokenEvent[]> {
 			const output = Number(usage.output ?? 0);
 			if (input === 0 && output === 0) continue;
 
-			const timestamp = String(parsed.timestamp ?? new Date().toISOString());
+			// Skip events without a valid timestamp. Falling back to `now()`
+			// here (the previous behavior) bypassed dedup — the synthetic
+			// timestamp differed each scan, so the same real event accumulated
+			// unbounded.
+			if (!isValidTimestamp(parsed.timestamp)) continue;
+			const timestamp = parsed.timestamp;
 			const dedupeKey = `pi:${timestamp}:${input + output}`;
 			if (seen.has(dedupeKey)) continue;
 			seen.add(dedupeKey);

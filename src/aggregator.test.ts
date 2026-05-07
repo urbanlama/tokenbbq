@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregateByProject } from './aggregator.js';
-import type { UnifiedTokenEvent } from './types.js';
+import { aggregateByProject, buildDashboardData } from './aggregator.js';
+import { isValidTimestamp, type UnifiedTokenEvent } from './types.js';
 
 function ev(over: Partial<UnifiedTokenEvent> = {}): UnifiedTokenEvent {
   return {
@@ -91,5 +91,35 @@ describe('aggregateByProject', () => {
     const cx = p.perSource.find(s => s.source === 'codex');
     assert.equal(cc?.costUSD, 4);
     assert.equal(cx?.costUSD, 0.75);
+  });
+});
+
+describe('isValidTimestamp', () => {
+  test('accepts ISO 8601 strings that parse to a finite Date', () => {
+    assert.equal(isValidTimestamp('2026-04-20T10:00:00.000Z'), true);
+    assert.equal(isValidTimestamp('2026-04-20'), true);
+  });
+
+  test('rejects empty, garbage, non-string, or NaN-producing inputs', () => {
+    assert.equal(isValidTimestamp(''), false);
+    assert.equal(isValidTimestamp('not-a-date'), false);
+    assert.equal(isValidTimestamp(null), false);
+    assert.equal(isValidTimestamp(undefined), false);
+    assert.equal(isValidTimestamp(1700000000), false);
+    assert.equal(isValidTimestamp({}), false);
+  });
+});
+
+describe('buildDashboardData timestamp safety', () => {
+  test('drops events with invalid timestamps without throwing', () => {
+    const events = [
+      ev({ timestamp: 'not-a-date' }),
+      ev({ timestamp: '' }),
+      ev({ timestamp: '2026-04-20T10:00:00.000Z' }),
+    ];
+    const out = buildDashboardData(events);
+    assert.equal(out.totals.eventCount, 1);
+    assert.equal(out.daily.length, 1);
+    assert.equal(out.daily[0].date, '2026-04-20');
   });
 });

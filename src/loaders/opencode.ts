@@ -125,7 +125,9 @@ export async function loadOpenCodeEvents(opts: LoaderOptions = { quiet: false })
 
         const time = payload.time as Record<string, unknown> | undefined;
         const timestampMs = numberOr(time?.created, row.time_created);
-        const timestamp = new Date(timestampMs).toISOString();
+        const ts = new Date(timestampMs);
+        if (Number.isNaN(ts.getTime())) continue;
+        const timestamp = ts.toISOString();
 
         const modelID = typeof payload.modelID === 'string' ? payload.modelID : 'unknown';
 

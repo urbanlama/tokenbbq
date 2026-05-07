@@ -167,7 +167,6 @@ pub async fn load_settings(app: AppHandle) -> Result<SettingsDisplay, String> {
 
     Ok(SettingsDisplay {
         has_session_key: session_key.is_some(),
-        session_key,
         org_id: store.get("org_id").and_then(|v| v.as_str().map(String::from)),
         saved_at: store.get("saved_at").and_then(|v| v.as_u64()),
     })
