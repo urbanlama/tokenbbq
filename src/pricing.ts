@@ -30,19 +30,52 @@ const FALLBACK_PRICES: Record<string, ModelPricing> = {
 	},
 };
 
+// Caches only successful LiteLLM fetches. A network failure used to
+// pin FALLBACK_PRICES in here for the rest of the process — long-running
+// dashboard servers stayed at $0.00 forever after one transient hiccup.
+// Now we cache only happy-path results and re-attempt on failure, with
+// a short cooldown so we don't hammer GitHub between fast retries.
 let pricingCache: Record<string, ModelPricing> | null = null;
+let lastFetchFailureAt = 0;
+const FAILURE_COOLDOWN_MS = 5 * 60 * 1000;
+
+function isValidPricingMap(v: unknown): v is Record<string, ModelPricing> {
+	if (!v || typeof v !== 'object') return false;
+	// Sanity-check a handful of well-known keys; if zero are present *or*
+	// any present one is wrong-shape, treat as garbage and fall back.
+	const probes = ['claude-sonnet-4-20250514', 'gpt-5', 'gpt-4o'];
+	const obj = v as Record<string, unknown>;
+	let seen = 0;
+	for (const key of probes) {
+		const entry = obj[key];
+		if (entry === undefined) continue;
+		seen++;
+		if (typeof entry !== 'object' || entry === null) return false;
+		const e = entry as Record<string, unknown>;
+		if ('input_cost_per_token' in e && typeof e.input_cost_per_token !== 'number') return false;
+		if ('output_cost_per_token' in e && typeof e.output_cost_per_token !== 'number') return false;
+	}
+	return seen > 0;
+}
 
 async function fetchPricing(): Promise<Record<string, ModelPricing>> {
 	if (pricingCache) return pricingCache;
 
+	const now = Date.now();
+	if (now - lastFetchFailureAt < FAILURE_COOLDOWN_MS) return FALLBACK_PRICES;
+
 	try {
 		const res = await fetch(LITELLM_URL, { signal: AbortSignal.timeout(5000) });
 		if (!res.ok) throw new Error(`HTTP ${res.status}`);
-		pricingCache = (await res.json()) as Record<string, ModelPricing>;
+		const parsed = await res.json();
+		if (!isValidPricingMap(parsed)) throw new Error('LiteLLM JSON failed runtime shape check');
+		pricingCache = parsed;
 		return pricingCache;
 	} catch {
-		pricingCache = FALLBACK_PRICES;
-		return pricingCache;
+		lastFetchFailureAt = Date.now();
+		// Return the fallback for *this* call without poisoning the cache,
+		// so a successful retry after the cooldown can populate properly.
+		return FALLBACK_PRICES;
 	}
 }
 
