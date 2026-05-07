@@ -1,21 +1,20 @@
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import path from 'node:path';
 import { glob } from 'tinyglobby';
 import type { UnifiedTokenEvent } from '../types.js';
 import { isValidTimestamp } from '../types.js';
-
-const HOME = homedir();
+import { getPlatformDataDirs } from '../platform-paths.js';
 
 function getAmpPath(): string | null {
 	const envPath = (process.env.AMP_DATA_DIR ?? '').trim();
 	if (envPath !== '') {
 		const resolved = path.resolve(envPath);
-		if (existsSync(resolved)) return resolved;
+		if (existsSync(path.join(resolved, 'threads'))) return resolved;
 	}
-	const defaultPath = path.join(HOME, '.local', 'share', 'amp');
-	if (existsSync(defaultPath)) return defaultPath;
+	for (const candidate of getPlatformDataDirs('amp')) {
+		if (existsSync(path.join(candidate, 'threads'))) return candidate;
+	}
 	return null;
 }
 

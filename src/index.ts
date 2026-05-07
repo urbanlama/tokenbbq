@@ -43,8 +43,10 @@ ${pc.cyan('Supported Tools:')}
   Claude Code    ~/.claude/projects/**/*.jsonl
   Codex          ~/.codex/sessions/**/*.jsonl
   Gemini         ~/.gemini/tmp/**/chats/session-*.json
-  OpenCode       ~/.local/share/opencode/opencode.db (SQLite)
-  Amp            ~/.local/share/amp/threads/**/*.json
+  OpenCode       ~/.local/share/opencode/opencode.db (SQLite, all platforms)
+  Amp            Linux:   ~/.local/share/amp/threads/**/*.json
+                 macOS:   ~/Library/Application Support/amp/threads/**/*.json
+                 Windows: %APPDATA%\\amp\\threads\\**\\*.json
   Pi-Agent       ~/.pi/agent/sessions/**/*.jsonl
 `);
 }

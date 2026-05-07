@@ -8,10 +8,25 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [20, 22, 24]
+        # Linux on every supported Node version (matches engines: ">=20"),
+        # plus a single Node version on macOS + Windows so cross-platform
+        # bugs (path separators, default data-dir lookups, file APIs) get
+        # caught in CI without 9× the runner cost.
+        include:
+          - os: ubuntu-latest
+            node-version: 20
+          - os: ubuntu-latest
+            node-version: 22
+          - os: ubuntu-latest
+            node-version: 24
+          - os: macos-latest
+            node-version: 22
+          - os: windows-latest
+            node-version: 22
 
     steps:
       - uses: actions/checkout@v4

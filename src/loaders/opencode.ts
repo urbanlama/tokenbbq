@@ -1,13 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import path from 'node:path';
 import initSqlJs from 'sql.js';
 import type { UnifiedTokenEvent } from '../types.js';
 import type { LoaderOptions } from './index.js';
 import { resolveProjectRoot } from '../project.js';
+import { getPlatformDataDirs } from '../platform-paths.js';
 import { SQL_WASM_BASE64 } from './sql-wasm-inline.js';
-
-const HOME = homedir();
 
 // sql.js's default loader fopen()s `sql-wasm.wasm` from the path Emscripten
 // recorded at sql.js build time. After Bun --compile (or any other deploy
@@ -27,8 +25,9 @@ function getOpenCodeDir(): string | null {
     const resolved = path.resolve(envPath);
     if (existsSync(path.join(resolved, 'opencode.db'))) return resolved;
   }
-  const defaultPath = path.join(HOME, '.local', 'share', 'opencode');
-  if (existsSync(path.join(defaultPath, 'opencode.db'))) return defaultPath;
+  for (const candidate of getPlatformDataDirs('opencode')) {
+    if (existsSync(path.join(candidate, 'opencode.db'))) return candidate;
+  }
   return null;
 }
 
