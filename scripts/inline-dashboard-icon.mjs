@@ -5,8 +5,11 @@
 // scripts/inline-wasm.mjs (which solves the same Bun --compile problem).
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(import.meta.dirname, '..');
+// `import.meta.dirname` lands in Node 20.11; CI matrix includes 20.0,
+// so use `fileURLToPath(import.meta.url)` for portability.
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = path.join(repoRoot, 'widget', 'src', 'assets', 'tokenbbq-icon.png');
 const dst = path.join(repoRoot, 'src', 'dashboard-icon.ts');
 
